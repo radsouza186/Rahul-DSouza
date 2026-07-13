@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rahul D'Souza — Mechanical Design Engineer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 17px; }
+
+:root {
+  --bg:      #0b0d0f;
+  --surface: #111316;
+  --surface2:#14171b;
+  --border:  #1e2226;
+  --accent:  #00c4a0;
+  --text:    #e8eaec;
+  --muted:   #cdd2d8;
+  --hf: 'Bebas Neue', sans-serif;
+  --bf: 'DM Sans', sans-serif;
+  --mf: 'DM Mono', monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--bf);
+  font-weight: 300;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: .35;
+}
+
+/* ═══════ NAV ═══════ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+  padding: 0 48px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(11,13,15,0.92);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-family: var(--mf); font-size: 11px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--text); cursor: pointer;
+}
+.nav-logo span { color: var(--accent); }
+
+.nav-menu { position: relative; }
+.menu-btn {
+  background: none; border: 1px solid var(--border);
+  padding: 8px 18px; cursor: pointer;
+  font-family: var(--mf); font-size: 10px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--text); display: flex; align-items: center; gap: 10px;
+  transition: border-color .2s, color .2s;
+}
+.menu-btn:hover, .menu-btn.open { border-color: var(--accent); color: var(--accent); }
+
+.hamburger { display: flex; flex-direction: column; gap: 4px; }
+.hamburger span { width: 14px; height: 1px; background: currentColor; display: block; transition: all .25s; }
+.menu-btn.open .hamburger span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.menu-btn.open .hamburger span:nth-child(2) { opacity: 0; }
+.menu-btn.open .hamburger span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
+
+.dropdown {
+  position: absolute; top: calc(100% + 10px); right: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  min-width: 230px; z-index: 600;
+  opacity: 0; pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity .18s, transform .18s;
+}
+.dropdown.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+.dropdown a {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 20px;
+  font-family: var(--mf); font-size: 10px;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: color .15s, background .15s;
+}
+.dropdown a:last-child { border-bottom: none; }
+.dropdown a:hover { color: var(--accent); background: rgba(0,196,160,.04); }
+.dropdown a.cur { color: var(--accent); }
+.dd-num { font-size: 9px; color: var(--border); }
+
+/* ═══════ PAGE SYSTEM ═══════ */
+.page { display: none; min-height: 100vh; padding-top: 64px; }
+.page.active { display: block; }
+
+/* The whole page fades+slides in — pure CSS, no JS needed for this */
+@keyframes pgIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page.active { animation: pgIn .28s ease both; }
+
+/* Stagger children with CSS — no IntersectionObserver, fires immediately */
+@keyframes si {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger > * { animation: si .45s ease both; }
+.stagger > *:nth-child(1) { animation-delay: .04s; }
+.stagger > *:nth-child(2) { animation-delay: .11s; }
+.stagger > *:nth-child(3) { animation-delay: .18s; }
+.stagger > *:nth-child(4) { animation-delay: .25s; }
+.stagger > *:nth-child(5) { animation-delay: .32s; }
+.stagger > *:nth-child(6) { animation-delay: .39s; }
+.stagger > *:nth-child(7) { animation-delay: .46s; }
+
+/* ═══════ SHARED ATOMS ═══════ */
+.eyebrow {
+  font-family: var(--mf); font-size: 10px;
+  letter-spacing: .2em; color: var(--accent);
+  text-transform: uppercase; margin-bottom: 10px;
+}
+
+.grid-bg {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%);
+  opacity: .4; pointer-events: none;
+}
+
+/* ═══════ PAGE BANNER ═══════ */
+.page-banner {
+  position: relative;
+  padding: 56px 48px 52px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.banner-glow {
+  position: absolute; top: -60px; right: -60px;
+  width: 440px; height: 440px;
+  background: radial-gradient(circle, rgba(0,196,160,.11) 0%, transparent 65%);
+  pointer-events: none;
+}
+.banner-meta {
+  font-family: var(--mf); font-size: 10px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 14px; position: relative;
+}
+.banner-title {
+  font-family: var(--hf);
+  font-size: clamp(52px, 7vw, 100px);
+  line-height: .9; letter-spacing: .02em; position: relative;
+}
+.banner-sub {
+  font-size: 14px; color: var(--muted);
+  max-width: 580px; margin-top: 20px; line-height: 1.75; position: relative;
+}
+.banner-rule {
+  width: 36px; height: 2px; background: var(--accent);
+  margin-top: 24px; position: relative;
+}
+
+/* ═══════ HOME ═══════ */
+.home-hero {
+  position: relative; display: grid; grid-template-columns: 1fr 1fr;
+  align-items: center; min-height: calc(100vh - 64px); overflow: hidden;
+}
+.home-glow {
+  position: absolute; top: -10%; right: -5%;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(0,196,160,.12) 0%, transparent 65%);
+  pointer-events: none;
+}
+.home-glow2 {
+  position: absolute; bottom: 0; left: 10%;
+  width: 380px; height: 380px;
+  background: radial-gradient(circle, rgba(255,92,58,.07) 0%, transparent 65%);
+  pointer-events: none;
+}
+.home-left { padding: 80px 48px; position: relative; z-index: 2; }
+
+.home-tag {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mf); font-size: 10px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 28px;
+}
+.home-tag::before { content: ''; width: 24px; height: 1px; background: var(--accent); }
+
+.home-name {
+  font-family: var(--hf);
+  font-size: clamp(64px, 8vw, 116px);
+  line-height: .88; letter-spacing: .02em; margin-bottom: 28px;
+}
+.home-name .ln { color: var(--accent); display: block; }
+
+.home-bio {
+  font-size: 14.5px; color: var(--muted);
+  max-width: 440px; margin-bottom: 44px; line-height: 1.8;
+}
+
+.home-stats { display: flex; gap: 36px; margin-bottom: 52px; flex-wrap: wrap; }
+.h-stat-num { font-family: var(--hf); font-size: 34px; color: var(--accent); line-height: 1; }
+.h-stat-label {
+  font-family: var(--mf); font-size: 9px;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); margin-top: 2px;
+}
+
+.home-nav-buttons {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 2px; background: var(--border); max-width: 560px;
+}
+.hnb {
+  background: var(--surface); padding: 18px 20px;
+  cursor: pointer; border: 1px solid var(--border); text-align: left;
+  transition: border-color .2s, color .2s; display: flex; flex-direction: column; gap: 5px;
+}
+.hnb:hover { border-color: var(--accent); }
+.hnb-num { font-family: var(--mf); font-size: 9px; letter-spacing: .12em; color: var(--muted); transition: color .2s; }
+.hnb:hover .hnb-num { color: var(--accent); }
+.hnb-label {
+  font-family: var(--mf); font-size: 10px;
+  letter-spacing: .11em; text-transform: uppercase;
+  color: var(--muted); transition: color .2s;
+}
+.hnb:hover .hnb-label { color: var(--accent); }
+.hnb-arrow { font-size: 12px; color: var(--accent); margin-top: 2px; opacity: 0; transition: opacity .2s, transform .2s; transform: translateX(-4px); }
+.hnb:hover .hnb-arrow { opacity: 1; transform: translateX(0); }
+
+/* photo */
+.home-right {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; justify-content: center; padding: 60px 48px;
+}
+.photo-frame { position: relative; width: 374px; height: 462px; }
+.photo-frame::before {
+  content: ''; position: absolute; inset: -2px;
+  background: linear-gradient(135deg, var(--accent), transparent 60%); z-index: -1;
+}
+.photo-placeholder {
+  width: 100%; height: 100%;
+  display: block; overflow: hidden;
+  position: relative;
+}
+.photo-corner { position: absolute; width: 18px; height: 18px; border-color: var(--accent); border-style: solid; }
+.photo-corner.tl { top: 10px; left: 10px; border-width: 1px 0 0 1px; }
+.photo-corner.tr { top: 10px; right: 10px; border-width: 1px 1px 0 0; }
+.photo-corner.bl { bottom: 42px; left: 10px; border-width: 0 0 1px 1px; }
+.photo-corner.br { bottom: 42px; right: 10px; border-width: 0 1px 1px 0; }
+.photo-placeholder svg { width: 52px; height: 52px; opacity: .15; }
+.photo-hint {
+  font-family: var(--mf); font-size: 9px; letter-spacing: .13em; text-transform: uppercase;
+  color: var(--muted); text-align: center; padding: 0 24px; line-height: 1.7;
+}
+.photo-tag {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--surface); border-top: 1px solid var(--border); padding: 12px 18px;
+}
+.photo-tag-name { font-family: var(--hf); font-size: 20px; letter-spacing: .04em; }
+.photo-tag-role { font-family: var(--mf); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+
+/* ═══════ CARDS ═══════ */
+.sec-wrap { padding: 52px 48px 80px; }
+.cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; background: var(--border); }
+.card {
+  background: var(--surface); padding: 42px;
+  position: relative; overflow: hidden; transition: background .25s;
+}
+.card:hover { background: var(--surface2); }
+.card.span2 { grid-column: span 2; }
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  transform: scaleX(0); transform-origin: left; transition: transform .35s;
+}
+.card:hover::before { transform: scaleX(1); }
+.card-num {
+  font-family: var(--hf); font-size: 68px; color: var(--border);
+  line-height: 1; position: absolute; right: 26px; top: 18px;
+  transition: color .3s; letter-spacing: .02em;
+}
+.card:hover .card-num { color: rgba(0,196,160,.06); }
+.card-tag-pill {
+  display: inline-block; font-family: var(--mf); font-size: 9px;
+  letter-spacing: .14em; text-transform: uppercase;
+  padding: 4px 10px; border: 1px solid var(--border);
+  color: var(--muted); margin-bottom: 18px; transition: all .25s;
+}
+.card:hover .card-tag-pill { border-color: var(--accent); color: var(--accent); }
+.card-title {
+  font-family: var(--hf); font-size: clamp(22px,2.5vw,30px);
+  letter-spacing: .04em; line-height: 1.1; margin-bottom: 16px;
+}
+.card-body { font-size: 14.5px; color: var(--muted); line-height: 1.85; margin-bottom: 22px; }
+.card-body p { margin-bottom: 9px; }
+.bullets { display: flex; flex-direction: column; gap: 9px; }
+.bullet { display: flex; gap: 11px; align-items: flex-start; font-size: 14px; color: var(--muted); }
+.bullet::before { content: '→'; color: var(--accent); flex-shrink: 0; font-size: 11px; margin-top: 3px; }
+.stat-row {
+  display: flex; gap: 32px; margin-top: 28px; padding-top: 24px;
+  border-top: 1px solid var(--border); flex-wrap: wrap;
+}
+.stat { display: flex; flex-direction: column; gap: 4px; }
+.stat-num { font-family: var(--hf); font-size: 32px; color: var(--accent); line-height: 1; }
+.stat-desc { font-family: var(--mf); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+/* ═══════ SKILLS BAR ═══════ */
+.skills-wrap { background: var(--surface); border-top: 1px solid var(--border); }
+.skills-inner { padding: 48px; }
+.skills-inner .eyebrow { margin-bottom: 28px; }
+.skills-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 2px; background: var(--border); }
+.skill-block { background: var(--bg); padding: 26px 22px; }
+.skill-block-title { font-family: var(--mf); font-size: 9px; letter-spacing: .15em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+.skill-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.s-tag { font-size: 12px; color: var(--muted); padding: 3px 9px; border: 1px solid var(--border); transition: all .2s; }
+.s-tag:hover { border-color: var(--accent); color: var(--text); }
+
+/* ═══════ EXT LINK ═══════ */
+.ext-link {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 13px 22px; border: 1px solid var(--border);
+  font-family: var(--mf); font-size: 10px;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none;
+  transition: border-color .2s, color .2s; margin-top: 28px;
+}
+.ext-link:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ═══════ CONTACT ═══════ */
+.contact-body {
+  padding: 52px 48px 80px;
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: 60px; align-items: start;
+}
+.contact-items { display: flex; flex-direction: column; gap: 2px; background: var(--border); }
+.contact-item {
+  background: var(--surface); padding: 20px 26px;
+  display: flex; align-items: center; justify-content: space-between;
+  text-decoration: none; transition: background .2s;
+}
+.contact-item:hover { background: var(--surface2); }
+.contact-item-left { display: flex; flex-direction: column; gap: 3px; }
+.ci-label { font-family: var(--mf); font-size: 9px; letter-spacing: .15em; text-transform: uppercase; color: var(--accent); }
+.ci-val { font-size: 14px; color: var(--text); font-weight: 400; }
+.ci-arrow { font-size: 18px; color: var(--muted); transition: color .2s, transform .2s; }
+.contact-item:hover .ci-arrow { color: var(--accent); transform: translate(3px,-3px); }
+
+.edu-block { background: var(--surface); padding: 32px; border: 1px solid var(--border); margin-bottom: 2px; }
+.edu-school { font-family: var(--hf); font-size: 26px; letter-spacing: .04em; margin-bottom: 5px; }
+.edu-degree { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.edu-meta { font-family: var(--mf); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.about-block {
+  background: var(--surface); padding: 32px; border: 1px solid var(--border); border-top: none;
+  font-size: 13.5px; color: var(--muted); line-height: 1.8;
+}
+.about-block p + p { margin-top: 14px; }
+
+/* ═══════ FOOTER ═══════ */
+.site-footer {
+  padding: 20px 48px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+}
+.site-footer p, .site-footer a {
+  font-family: var(--mf); font-size: 9px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none; cursor: pointer;
+}
+.site-footer a:hover { color: var(--accent); }
+
+/* ═══════ RESPONSIVE ═══════ */
+@media (max-width: 900px) {
+  nav { padding: 0 20px; }
+  .home-hero { grid-template-columns: 1fr; }
+  .home-right { display: none; }
+  .home-left { padding: 48px 20px; }
+  .page-banner { padding: 44px 20px 40px; }
+  .sec-wrap, .skills-inner, .contact-body { padding-left: 20px; padding-right: 20px; }
+  .cards-grid { grid-template-columns: 1fr; }
+  .card.span2 { grid-column: span 1; }
+  .card { padding-right: 80px; }
+  .skills-row { grid-template-columns: 1fr 1fr; }
+  .contact-body { grid-template-columns: 1fr; gap: 32px; }
+  .site-footer { padding: 18px 20px; flex-direction: column; text-align: center; }
+  .home-nav-buttons { max-width: 100%; }
+}
+@media (max-width: 540px) {
+  .home-nav-buttons { grid-template-columns: 1fr 1fr; }
+  .skills-row { grid-template-columns: 1fr; }
+}
+
+/* Image galleries */
+.img-gallery {
+  display: grid; gap: 2px; background: var(--border);
+  margin-top: 40px;
+}
+.img-gallery.cols3 { grid-template-columns: repeat(3,1fr); }
+.img-gallery.cols2 { grid-template-columns: repeat(2,1fr); }
+.img-gallery.cols21 { grid-template-columns: 2fr 1fr; }
+
+.gallery-item {
+  position: relative; overflow: hidden;
+  background: var(--surface); aspect-ratio: 4/3;
+}
+.gallery-item.wide { aspect-ratio: 16/9; }
+.gallery-item.tall { aspect-ratio: 3/4; }
+
+.gallery-item img {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  display: block;
+  transition: transform .4s ease;
+  filter: brightness(.92) saturate(.9);
+}
+.gallery-item--full {
+  aspect-ratio: unset !important; overflow: visible !important;
+}
+.gallery-item--full img {
+  width: 100%; height: auto !important; object-fit: unset !important;
+}
+.gallery-item:hover img { transform: scale(1.03); filter: brightness(1) saturate(1); }
+
+.gallery-caption {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(11,13,15,.88));
+  padding: 28px 16px 12px;
+  font-family: var(--mf); font-size: 9px;
+  letter-spacing: .13em; text-transform: uppercase;
+  color: var(--muted); opacity: 0;
+  transition: opacity .3s;
+}
+.gallery-item:hover .gallery-caption { opacity: 1; }
+
+.gallery-label {
+  font-family: var(--mf); font-size: 10px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--accent); margin-top: 36px; margin-bottom: 10px;
+}
+
+@media (max-width: 700px) {
+  .img-gallery.cols3, .img-gallery.cols21 { grid-template-columns: 1fr; }
+  .img-gallery.cols2 { grid-template-columns: 1fr; }
+}
+
+/* ═══════ MAX WIDTH ═══════ */
+@media (min-width: 1400px) {
+  nav { padding: 0 calc((100vw - 1400px) / 2 + 48px); }
+  .page { max-width: 1400px; margin: 0 auto; }
+}
+
+
+/* ═══════ CAPSTONE SPLIT BANNER ═══════ */
+.page-banner--split {
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  gap: 0;
+}
+.page-banner--split .banner-glow,
+.page-banner--split .grid-bg {
+  position: absolute;
+  z-index: 0;
+}
+.page-banner--split .banner-text {
+  flex: 0 0 auto;
+  width: 52%;
+  padding: 56px 48px 52px;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.banner-render {
+  flex: 1 1 auto;
+  min-height: 320px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+.banner-render::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, var(--bg) 0%, transparent 30%);
+  z-index: 2;
+  pointer-events: none;
+}
+@media (max-width: 900px) {
+  .page-banner--split { flex-direction: column; }
+  .page-banner--split .banner-text { width: 100%; padding: 44px 20px 40px; }
+  .banner-render { min-height: 220px; }
+  .banner-render::before { background: linear-gradient(to bottom, var(--bg) 0%, transparent 30%); }
+}
+
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo" onclick="showPage('home')"><span>RD</span> / Portfolio</span>
+  <div class="nav-menu">
+    <button class="menu-btn" id="menuBtn" onclick="toggleMenu()">
+      <div class="hamburger"><span></span><span></span><span></span></div>
+      Menu
+    </button>
+    <div class="dropdown" id="dropdown">
+      <a onclick="showPage('home')"><span>Home</span><span class="dd-num">00</span></a>
+      <a onclick="showPage('arista')"><span>Arista Networks</span><span class="dd-num">01</span></a>
+      <a onclick="showPage('internship')"><span>Sensata Internship</span><span class="dd-num">02</span></a>
+      <a onclick="showPage('robotarm')"><span>Robotic Arm</span><span class="dd-num">03</span></a>
+      <a onclick="showPage('capstone')"><span>Senior Capstone</span><span class="dd-num">04</span></a>
+      <a onclick="showPage('contact')"><span>Contact</span><span class="dd-num">05</span></a>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ HOME ═══════════ -->
+<div id="page-home" class="page active">
+  <div class="home-hero">
+    <div class="grid-bg"></div>
+    <div class="home-glow"></div>
+    <div class="home-glow2"></div>
+    <div class="home-left stagger">
+      <div class="home-tag">Mechanical Design Engineer</div>
+      <h1 class="home-name">Rahul<span class="ln">D'Souza</span></h1>
+      <p class="home-bio">I'm drawn to hard problems that reward creative thinking — where usability and scale push back and force better solutions. I like working with my hands and I want to build things that make a real difference in people's lives. Currently at Arista Networks.</p>
+      <div class="home-stats">
+        <div><div class="h-stat-num">UCSD</div><div class="h-stat-label">Mechanical Engineering · Class of 2024</div></div>
+      </div>
+      <div class="home-nav-buttons">
+        <button class="hnb" onclick="showPage('arista')"><span class="hnb-num">01</span><span class="hnb-label">Arista Networks</span><span class="hnb-arrow">→</span></button>
+        <button class="hnb" onclick="showPage('internship')"><span class="hnb-num">02</span><span class="hnb-label">Sensata Internship</span><span class="hnb-arrow">→</span></button>
+        <button class="hnb" onclick="showPage('robotarm')"><span class="hnb-num">03</span><span class="hnb-label">Robotic Arm</span><span class="hnb-arrow">→</span></button>
+        <button class="hnb" onclick="showPage('capstone')"><span class="hnb-num">04</span><span class="hnb-label">Senior Capstone</span><span class="hnb-arrow">→</span></button>
+        <button class="hnb" onclick="showPage('contact')"><span class="hnb-num">05</span><span class="hnb-label">Contact</span><span class="hnb-arrow">→</span></button>
+      </div>
+    </div>
+    <div class="home-right">
+      <div class="photo-frame">
+        <img src="images/img_01.jpg" style="width:100%;height:100%;object-fit:cover;object-position:center top;" alt="Rahul D'Souza">
+        <div class="photo-tag">
+          <div class="photo-tag-name">Rahul D'Souza</div>
+          <div class="photo-tag-role">Mech. Design Engineer · Arista Networks</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="site-footer"><p>Rahul D'Souza · Mechanical Design Engineer</p><p>radsouza1@gmail.com · (805) 559-0514</p></div>
+</div>
+
+<!-- ═══════════ ARISTA ═══════════ -->
+<div id="page-arista" class="page">
+  <div class="page-banner page-banner--split stagger">
+    <div class="banner-glow"></div><div class="grid-bg"></div>
+    <div class="banner-text">
+      <p class="banner-meta">Work Experience · Feb 2025 – Present</p>
+      <h2 class="banner-title">Arista<br>Networks</h2>
+      <p class="banner-sub">Part of a two-person mechanical team designing a modular network switch platform — covering chassis architecture, line card enclosures, production fixtures, and cross-functional hardware integration.</p>
+      <div class="banner-rule"></div>
+    </div>
+    <div class="banner-render" style="background:#e8eaec;">
+      <img src="images/img_09.jpg" alt="Arista network switches" style="width:100%;height:100%;object-fit:contain;object-position:center;display:block;padding:24px;">
+    </div>
+  </div>
+  <div class="sec-wrap">
+    <div class="cards-grid stagger">
+      <div class="card span2">
+        <span class="card-num">01</span>
+        <span class="card-tag-pill">Chassis · Enclosures · Cross-Functional</span>
+        <h3 class="card-title">Modular Network Switch Platform</h3>
+        <div class="card-body"><p>Core member of a two-person mechanical team responsible for the end-to-end mechanical architecture of a modular network switch — covering chassis, line card, and switch module enclosures.</p><p>Required tight coordination across electrical, thermal, and manufacturing teams, balancing fixed mechanical constraints against electrical layout needs while meeting thermal targets.</p></div>
+        <div class="bullets">
+          <div class="bullet">Designed a novel injection-molded cable-routing "pod" to decrease assembly time and protect internal cabling during service events</div>
+          <div class="bullet">Defined PCB component placement by balancing fixed mechanical constraints with movable features — collaborated closely with EEs on layout tradeoffs</div>
+          <div class="bullet">Worked with the thermal team to define heatsink and thermal requirements for a line card, driving a board respin and a new heatsink design</div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-num">02</span>
+        <span class="card-tag-pill">Fixture Design · Manufacturing</span>
+        <h3 class="card-title">Pneumatic PCB Press Fixture</h3>
+        <div class="card-body"><p>Designed and deployed a pneumatic press fixture to replace error-prone manual methods for high-force PCB connector mating on the production floor.</p></div>
+        <div class="bullets">
+          <div class="bullet">Engineered precision alignment features ensuring repeatable connector engagement across production units</div>
+          <div class="bullet">Received direct positive feedback from operators on alignment, ease of use, and repeatability vs. the previous manual process</div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-num">03</span>
+        <span class="card-tag-pill">Test Fixture · Vendor Management</span>
+        <h3 class="card-title">PCB Coupon Testing Fixture</h3>
+        <div class="card-body"><p>Designed a dedicated PCB coupon testing fixture to replace a time-consuming manual setup, and managed design alignment with a new vendor through validation.</p></div>
+        <div class="bullets">
+          <div class="bullet">Reduced test setup time by approximately 50% vs. the previous manual approach</div>
+          <div class="bullet">Worked directly with a new vendor to communicate design intent and validate prototype conformance</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><span class="stat-num">~50%</span><span class="stat-desc">Setup time saved</span></div>
+          <div class="stat"><span class="stat-num">1</span><span class="stat-desc">New vendor onboarded</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-num">04</span>
+        <span class="card-tag-pill">Sheet Metal · Toolless Design</span>
+        <h3 class="card-title">4RU Rack-Mount Kit</h3>
+        <div class="card-body"><p>Developed a more robust rack-mount solution for larger systems by adapting an existing 2RU design to a 4RU form factor with a new toolless grounding feature.</p></div>
+        <div class="bullets">
+          <div class="bullet">Scaled proven 2RU architecture to 4RU while maintaining structural integrity and installation simplicity</div>
+          <div class="bullet">Toolless grounding feature reduces installation time and provides redundant grounding path in case of installation error</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="skills-wrap"><div class="skills-inner">
+    <p class="eyebrow">Applied at Arista</p>
+    <div class="skills-row">
+      <div class="skill-block"><p class="skill-block-title">CAD</p><div class="skill-tags"><span class="s-tag">Creo</span><span class="s-tag">SolidWorks</span><span class="s-tag">Fusion 360</span></div></div>
+      <div class="skill-block"><p class="skill-block-title">Engineering</p><div class="skill-tags"><span class="s-tag">GD&amp;T</span><span class="s-tag">Tolerance Analysis</span><span class="s-tag">Injection Molding</span><span class="s-tag">Sheet Metal</span></div></div>
+      <div class="skill-block"><p class="skill-block-title">Hardware</p><div class="skill-tags"><span class="s-tag">PCB Mechanical Integration</span><span class="s-tag">Fixtures</span><span class="s-tag">Pneumatics</span></div></div>
+      <div class="skill-block"><p class="skill-block-title">Process</p><div class="skill-tags"><span class="s-tag">Vendor Management</span><span class="s-tag">2D Drawings</span><span class="s-tag">FEA</span></div></div>
+    </div>
+  </div></div>
+  <div class="site-footer"><p>Arista Networks · Mechanical Design Engineer · 2025–Present</p><a onclick="showPage('home')">← Back to Home</a></div>
+</div>
+
+<!-- ═══════════ INTERNSHIP ═══════════ -->
+<div id="page-internship" class="page">
+  <div class="page-banner stagger">
+    <div class="banner-glow"></div><div class="grid-bg"></div>
+    <p class="banner-meta">Internship · June – Sept 2023</p>
+    <h2 class="banner-title">Sensata<br>Technologies</h2>
+    <p class="banner-sub">Mechanical engineering internship focused on weld characterization for automotive contactors and data-driven process optimization using Monte Carlo simulation.</p>
+    <div class="banner-rule"></div>
+  </div>
+  <div class="sec-wrap">
+    <div class="cards-grid stagger">
+      <div class="card span2">
+        <span class="card-num">01</span>
+        <span class="card-tag-pill">Design · DOE · Process Engineering</span>
+        <h3 class="card-title">Weld Characterization Study</h3>
+        <div class="card-body"><p>Core internship project: fully characterize a laser weld used in a group of automotive contactors to meet 10-year weld strength standards. Owned the project end-to-end — from designing test coupons and fixtures to running statistical analysis and delivering actionable findings.</p><p>The final deliverable gave the design team a reliable basis for reliability assurances and improved communication between design, process, and manufacturing teams.</p></div>
+        <div class="bullets">
+          <div class="bullet">Designed test coupons and fixtures for laser welding and CNC machining in SolidWorks, with precise GD&amp;T drawings</div>
+          <div class="bullet">Executed a structured Design of Experiments (DOE) in Minitab and presented findings in A3 format</div>
+          <div class="bullet">Navigated multiple roadblocks throughout to deliver a product the design team could act on</div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-num">02</span>
+        <span class="card-tag-pill">MATLAB · Data Analysis · Automation</span>
+        <h3 class="card-title">Monte Carlo Tolerance Program</h3>
+        <div class="card-body"><p>Built a MATLAB program to automate Monte Carlo tolerance stack simulations — cutting turnaround from ~30 minutes to 5–10 minutes per run.</p></div>
+        <div class="bullets">
+          <div class="bullet">Accepted user input to locate dimensions in inspection reports, generated Monte Carlo normal distributions, and graphed histograms</div>
+          <div class="bullet">Found defects in 6 separate components; presented root cause insights to focus engineering efforts</div>
+          <div class="bullet">Findings contributed directly to root cause analysis and production floor decision-making</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><span class="stat-num">6×</span><span class="stat-desc">Faster simulation</span></div>
+          <div class="stat"><span class="stat-num">6</span><span class="stat-desc">Defects identified</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-num">03</span>
+        <span class="card-tag-pill">Key Takeaways</span>
+        <h3 class="card-title">What I Took Away</h3>
+        <div class="card-body"><p>The internship sharpened how I think about design — good engineering decisions are grounded in data. I developed intuition for DFM tradeoffs and learned to turn messy test data into clear, convincing arguments for action.</p></div>
+        <div class="bullets">
+          <div class="bullet">Design for Manufacturing — how process constraints shape part geometry</div>
+          <div class="bullet">Statistical thinking — using DOE and Monte Carlo to replace guesswork with evidence</div>
+          <div class="bullet">Technical communication — A3 format, GD&amp;T drawings, cross-functional presentations</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="skills-wrap"><div class="skills-inner">
+    <p class="eyebrow">Tools Used</p>
+    <div class="skills-row">
+      <div class="skill-block"><p class="skill-block-title">CAD</p><div class="skill-tags"><span class="s-tag">SolidWorks</span><span class="s-tag">GD&amp;T</span><span class="s-tag">2D Drawings</span></div></div>
+      <div class="skill-block"><p class="skill-block-title">Analysis</p><div class="skill-tags"><span class="s-tag">Minitab</span><span class="s-tag">DOE</span><span class="s-tag">MATLAB</span></div></div>
+      <div class="skill-block"><p class="skill-block-title">Methods</p><div class="skill-tags"><span class="s-tag">Monte Carlo</span><span class="s-tag">A3 Reporting</span><span class="s-tag">Root Cause Analysis</span></div></div>
+      <div class="skill-block"><p class="skill-block-title">Domain</p><div class="skill-tags"><span class="s-tag">Laser Welding</span><span class="s-tag">CNC Machining</span><span class="s-tag">Automotive Standards</span></div></div>
+    </div>
+  </div></div>
+  <div class="site-footer"><p>Sensata Technologies · Internship · Summer 2023</p><a onclick="showPage('home')">← Back to Home</a></div>
+</div>
+
+<!-- ═══════════ ROBOTIC ARM ═══════════ -->
+<div id="page-robotarm" class="page">
+  <div class="page-banner page-banner--split stagger">
+    <div class="banner-glow"></div><div class="grid-bg"></div>
+    <div class="banner-text">
+      <p class="banner-meta">Personal Project · June 2024 – Present</p>
+      <h2 class="banner-title">3-Axis<br>Robotic Arm</h2>
+      <p class="banner-sub">A fully self-directed build — CAD, 3D printing, motor selection, and custom control firmware. Ongoing iterative development pushing toward better torque, form factor, and precision.</p>
+      <div class="banner-rule"></div>
+    </div>
+    <div class="banner-render">
+      <img src="images/img_02.png" alt="3-axis arm CAD render">
+    </div>
+  </div>
+  <div class="sec-wrap">
+    <div class="cards-grid stagger">
+      <div class="card span2">
+        <span class="card-num">01</span>
+        <span class="card-tag-pill">Mechanical Design · Electronics · Controls</span>
+        <h3 class="card-title">Project Overview</h3>
+        <div class="card-body"><p>A minimal form factor 3-axis robotic arm designed, built, and controlled from scratch. The goal: a capable, compact arm that responds to user input in real time via an Xbox controller, using inverse kinematics to translate joystick input into precise joint motion.</p></div>
+        <div class="bullets">
+          <div class="bullet">CAD modeled in Fusion 360; parts 3D printed in PLA on an Anycubic i3 Mega S</div>
+          <div class="bullet">NEMA 23 stepper motors with drivers; controlled via Arduino Uno</div>
+          <div class="bullet">Python script reads Xbox controller input (joystick values −1 to 1) and relays commands to the Arduino</div>
+          <div class="bullet">Arduino dynamically adjusts motor speed by varying PWM frequency between 20 and 1000 Hz</div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-num">02</span>
+        <span class="card-tag-pill">Design Iteration #1</span>
+        <h3 class="card-title">Planetary Gearbox Design</h3>
+        <div class="card-body"><p>First design used a custom 3D-printed planetary gearbox to handle transverse shaft loads. After testing, two things became clear: FDM tolerance limits significantly constrained gear mesh quality, and the motor shaft was far more robust than initially assumed.</p></div>
+        <div class="bullets">
+          <div class="bullet">Designed and printed a full planetary gearbox in PLA</div>
+          <div class="bullet">FDM tolerance identified as the binding constraint on effectiveness</div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-num">03</span>
+        <span class="card-tag-pill">Design Iteration #2 · Current</span>
+        <h3 class="card-title">Set Screw &amp; Cycloidal Design</h3>
+        <div class="card-body"><p>Replaced the planetary gearbox with a set screw shaft collar that shares its set screw with the 3D-printed arm, locking both together. Smaller, fewer parts, dramatically easier to build. Iterating with cycloidal gearboxes to maximize torque without growing the form factor.</p></div>
+        <div class="bullets">
+          <div class="bullet">Set screw coupling replaces gearbox — fewer parts, tighter assembly, same mechanical lock</div>
+          <div class="bullet">Cycloidal gearbox iterations increase output torque without growing form factor</div>
+          <div class="bullet">Ongoing refinement of inverse kinematics for smoother coordinated multi-axis motion</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="gallery-label">Design &amp; Prototypes</p>
+    <div class="img-gallery cols2">
+      <div class="gallery-item">
+        <img src="images/img_03.png" alt="3-axis arm CAD render">
+        <div class="gallery-caption">CAD Model — Full 3-axis arm assembly</div>
+      </div>
+      <div class="gallery-item gallery-item--full">
+        <img src="images/img_04.png" alt="Planetary gearbox">
+        <div class="gallery-caption">Design #1 — 3D-printed planetary gearbox</div>
+      </div>
+      <div class="gallery-item gallery-item--full">
+        <img src="images/img_05.png" alt="Set screw design">
+        <div class="gallery-caption">Design #2 — Set screw shaft collar coupling</div>
+      </div>
+    </div>
+    <a href="https://github.com/radsouza186/3-Axis-Robot-Arm" target="_blank" class="ext-link">GitHub Repository ↗</a>
+  </div>
+  <div class="site-footer"><p>3-Axis Robotic Arm · Personal Project · 2024–Present</p><a onclick="showPage('home')">← Back to Home</a></div>
+</div>
+
+<!-- ═══════════ CAPSTONE ═══════════ -->
+<div id="page-capstone" class="page">
+  <div class="page-banner page-banner--split stagger">
+    <div class="banner-glow"></div><div class="grid-bg"></div>
+    <div class="banner-text">
+      <p class="banner-meta">Senior Capstone · Sept 2023 – Mar 2024 · The Aerospace Corporation</p>
+      <h2 class="banner-title">ISAM Rail<br>System</h2>
+      <p class="banner-sub">A modular autonomous rail system for in-orbit satellite servicing — providing reconfigurable access to all points on a host satellite from a single central attachment location.</p>
+      <div class="banner-rule"></div>
+    </div>
+    <div class="banner-render">
+      <img src="images/img_06.png" alt="Full system render — rail deployed on host satellite in orbit" style="width:100%;height:100%;object-fit:cover;display:block;">
+    </div>
+  </div>
+  <div class="sec-wrap">
+    <div class="cards-grid stagger">
+      <div class="card span2">
+        <span class="card-num">01</span>
+        <span class="card-tag-pill">Aerospace Corporation · UCSD MAE 156B</span>
+        <h3 class="card-title">In-Space Servicing, Assembly &amp; Manufacturing</h3>
+        <div class="card-body"><p>Sponsored by The Aerospace Corporation, our team spent 15 weeks designing a modular rail system to support in-orbit satellite servicing and assembly — part of their goal of a functional in-orbit satellite factory by 2035.</p><p>An assembly robot extends a 3D-printed rail to a point of interest, dispatches single-function robots along the rail to perform operations, then fully retracts — leaving the satellite undisturbed. Full-surface access from a single central attachment point.</p></div>
+        <div class="bullets">
+          <div class="bullet">Modular 3D-printed beam system with end-of-life recyclability built into material selection</div>
+          <div class="bullet">Designed to work with a robotic arm deployer and autonomous single-function inspection/manipulation robots</div>
+          <div class="bullet">Provides full-surface access without requiring multiple attachment points on the host vehicle</div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-num">02</span>
+        <span class="card-tag-pill">Connector Design · Mass &amp; Time Reduction</span>
+        <h3 class="card-title">Compliant Snap-Fit Connector</h3>
+        <div class="card-body"><p>My primary design contribution replaced the previous twist-lock mechanism with a compliant snap-fit connector operable with simple linear actuation. Integrating the female end into the rail unit body turned it into negative space — with outsized effects on mass, print time, and storage density.</p></div>
+        <div class="bullets">
+          <div class="bullet">~40% reduction in rail unit mass through female connector body integration</div>
+          <div class="bullet">Print time cut from 11+ hours to just over 8 hours per unit</div>
+          <div class="bullet">90° symmetry allows use in four orientations</div>
+          <div class="bullet">Design adopted by The Aerospace Corporation for integration into their own space projects</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><span class="stat-num">40%</span><span class="stat-desc">Mass reduction</span></div>
+          <div class="stat"><span class="stat-num">30%</span><span class="stat-desc">Print time saved</span></div>
+          <div class="stat"><span class="stat-num">4</span><span class="stat-desc">Use orientations</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-num">03</span>
+        <span class="card-tag-pill">Impact</span>
+        <h3 class="card-title">Outcomes</h3>
+        <div class="card-body"><p>The connector design exceeded the scope of the capstone. Its performance prompted The Aerospace Corporation to adopt it into their own ongoing space engineering programs — a rare outcome for an undergraduate project.</p></div>
+        <div class="bullets">
+          <div class="bullet">Connector design adopted by The Aerospace Corporation for real space applications</div>
+          <div class="bullet">Demonstrated that design simplification (snap-fit over twist-lock) can outperform complexity on every metric</div>
+          <div class="bullet">Project documentation published on a dedicated team website</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="gallery-label">Project Visuals</p>
+    <div class="img-gallery cols21">
+      <div class="gallery-item wide">
+        <img src="images/img_07.png" alt="CONOPS diagram" style="object-fit:contain;background:#0b0c12;padding:8px;">
+        <div class="gallery-caption">Concept of Operations — autonomous rail deployment sequence</div>
+      </div>
+      
+    </div>
+    <div class="img-gallery cols2" style="margin-top:2px;">
+      <div class="gallery-item" style="aspect-ratio:5/2;">
+        <img src="images/img_08.png" alt="Connector cross-section" style="object-fit:contain;background:#111316;padding:16px;">
+        <div class="gallery-caption">Snap-fit connector cross-section — compliant female integration</div>
+      </div>
+    </div>
+    <a href="https://sites.google.com/ucsd.edu/mae156b-team1-wi24/home" target="_blank" class="ext-link">Project Webpage ↗</a>
+  </div>
+  <div class="site-footer"><p>UCSD MAE 156B · The Aerospace Corporation · 2023–2024</p><a onclick="showPage('home')">← Back to Home</a></div>
+</div>
+
+<!-- ═══════════ CONTACT ═══════════ -->
+<div id="page-contact" class="page">
+  <div class="page-banner stagger">
+    <div class="banner-glow"></div><div class="grid-bg"></div>
+    <p class="banner-meta">Get In Touch</p>
+    <h2 class="banner-title">Let's<br>Connect</h2>
+    <p class="banner-sub">Mechanical design engineer based in the Bay Area, currently at Arista Networks. Open to conversations about hardware design, new opportunities, or anything at the intersection of precision engineering and manufacturing.</p>
+    <div class="banner-rule"></div>
+  </div>
+  <div class="contact-body stagger">
+    <div>
+      <div class="contact-items">
+        <a href="mailto:radsouza1@gmail.com" class="contact-item"><div class="contact-item-left"><span class="ci-label">Email</span><span class="ci-val">radsouza1@gmail.com</span></div><span class="ci-arrow">↗</span></a>
+        <a href="tel:8055590514" class="contact-item"><div class="contact-item-left"><span class="ci-label">Phone</span><span class="ci-val">(805) 559-0514</span></div><span class="ci-arrow">↗</span></a>
+        <a href="https://www.linkedin.com/in/rahul-d-souza-5a2200104/" target="_blank" class="contact-item"><div class="contact-item-left"><span class="ci-label">LinkedIn</span><span class="ci-val">rahul-d-souza-5a2200104</span></div><span class="ci-arrow">↗</span></a>
+        <a href="https://github.com/radsouza186/" target="_blank" class="contact-item"><div class="contact-item-left"><span class="ci-label">GitHub</span><span class="ci-val">radsouza186</span></div><span class="ci-arrow">↗</span></a>
+        <a href="Rahul_DSouza_Resume.pdf" target="_blank" class="contact-item"><div class="contact-item-left"><span class="ci-label">Resume</span><span class="ci-val">Download PDF</span></div><span class="ci-arrow">↗</span></a>
+      </div>
+    </div>
+  </div>
+  <div class="site-footer"><p>Rahul D'Souza · Bay Area, CA</p><a onclick="showPage('home')">← Back to Home</a></div>
+</div>
+
+<script>
+const pageIds = ['home','arista','internship','robotarm','capstone','contact'];
+
+function showPage(id, pushHistory = true) {
+  // scroll to top instantly before any DOM change
+  window.scrollTo(0, 0);
+
+  pageIds.forEach(pid => {
+    const el = document.getElementById('page-' + pid);
+    el.classList.remove('active');
+    // Reset animation so it re-fires on next activation
+    el.style.animation = 'none';
+    el.offsetHeight; // force reflow
+    el.style.animation = '';
+  });
+
+  document.getElementById('page-' + id).classList.add('active');
+
+  // Update active link in dropdown
+  document.querySelectorAll('.dropdown a').forEach((a, i) => {
+    a.classList.toggle('cur', pageIds[i] === id);
+  });
+
+  // Push a history entry so the browser back button works
+  if (pushHistory) {
+    const hash = id === 'home' ? '' : '#' + id;
+    history.pushState({ page: id }, '', hash || window.location.pathname);
+  }
+
+  closeMenu();
+}
+
+// Handle back/forward browser navigation
+window.addEventListener('popstate', e => {
+  const id = (e.state && e.state.page) || 'home';
+  showPage(id, false);
+});
+
+// On first load, show the page matching the URL hash if present
+(function () {
+  const hash = window.location.hash.replace('#', '');
+  const id = pageIds.includes(hash) ? hash : 'home';
+  history.replaceState({ page: id }, '', window.location.href);
+  showPage(id, false);
+})();
+
+function toggleMenu() {
+  const btn = document.getElementById('menuBtn');
+  const dd = document.getElementById('dropdown');
+  const isOpen = btn.classList.toggle('open');
+  dd.classList.toggle('open', isOpen);
+}
+
+function closeMenu() {
+  document.getElementById('menuBtn').classList.remove('open');
+  document.getElementById('dropdown').classList.remove('open');
+}
+
+document.addEventListener('click', function(e) {
+  const menu = document.querySelector('.nav-menu');
+  if (menu && !menu.contains(e.target)) closeMenu();
+});
+</script>
+</body>
+</html>
